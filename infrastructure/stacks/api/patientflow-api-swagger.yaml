@@ -1,0 +1,170 @@
+swagger: "2.0"
+info:
+  description: "This is a patientflow swagger"
+  version: "1.0.0"
+  title: "Swagger PatientFlow"
+tags:
+- name: "organisation"
+  description: "Everything about your organisations"
+- name: "kiosk"
+  description: "Details about the kiosk"
+schemes:
+- "http"
+paths:
+  /organisation:
+    post:
+      tags:
+      - "organisation"
+      summary: "Create new organisation"
+      description: "Add a new organisation under patient flow system."
+      operationId: "createOrg"
+      produces:
+      - "application/vnd+api.json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Created organisation object"
+        required: true
+        schema:
+          $ref: "#/definitions/Organisation"
+      responses:
+        default:
+          description: "successful operation"
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        passthroughBehavior: never
+        credentials:
+          Ref: ApiGatewayLambdaExecutionRole
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostPatientFlowOrganisation.Arn}:*/invocations
+
+    get:
+      tags:
+      - "organisation"
+      summary: "Gets all the organisations from the patient flow system"
+      description: ""
+      operationId: "getOrganisation"
+      produces:
+      - "application/vnd+api.json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "integer"
+              format: "int32"
+        500:
+          description: "Internal server"
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        passthroughBehavior: never
+        credentials:
+          Ref: ApiGatewayLambdaExecutionRole
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPatientFlowOrganisation.Arn}:*/invocations
+
+  /kiosk:
+    post:
+      tags:
+      - "kiosk"
+      summary: "Create new kiosk"
+      description: "Add a new kiosk under organiation in patient flow system."
+      operationId: "createKiosk"
+      produces:
+      - "application/vnd+api.json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Created kiosk object"
+        required: true
+        schema:
+          $ref: "#/definitions/Kiosk"
+      responses:
+        default:
+          description: "successful operation"
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        passthroughBehavior: never
+        credentials:
+          Ref: ApiGatewayLambdaExecutionRole
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostPatientFlowKiosk.Arn}:*/invocations
+
+    get:
+      tags:
+      - "kiosk"
+      summary: "Gets specific kiosk data from patient flow system based on KioskGUID"
+      description: ""
+      operationId: "getKioskByGuid"
+      produces:
+      - "application/vnd+api.json"
+      parameters:
+        - in: query
+          name: kioskGUID
+          type: string
+          description: The kioskGUID to send as input
+        - in: query
+          name: machineID
+          type: string
+          description: The machine ID to send as input
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "integer"
+              format: "int32"
+        500:
+          description: "Internal server"
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        passthroughBehavior: never
+        credentials:
+          Ref: ApiGatewayLambdaExecutionRole
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPatientFlowKioskById.Arn}:*/invocations
+
+definitions:
+  Organisation:
+    type: "object"
+    properties:
+      PK:
+        type: "string"
+      SK:
+        type: "string"
+      OrganisationName:
+        type: "string"
+      SystemType:
+        type: "string"
+        description: "specific system type"
+        enum:
+        - "EMISWEB"
+        - "EMISPCS"
+        - "TPPSYSTMONE"
+    xml:
+      name: "Organisation"
+
+  Kiosk:
+    type: "object"
+    properties:
+      PK:
+        type: "string"
+      SK:
+        type: "string"
+      KioskName:
+        type: "string"
+      AdminPassword:
+        type: "string"
+      ScreenTimeout:
+        type: "string"
+      MachineId:
+        type: "string"
+    xml:
+      name: "Kiosk"

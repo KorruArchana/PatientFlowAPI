@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Cloud formation stack for patient flow'
+
+Parameters:
+  StackPrefix:
+    Type: String
+    Description: The stack prefix
+  Environment:
+    Type: String
+    Description: The environment to which stack is deployed
+    Default: sbx
+    AllowedValues:
+      - dev
+      - prod
+      - test
+      - sbx
+  ApiVersion:
+    Type: String
+    Description: The version of the API
+    Default: V1
+  StageName:
+    Type: String
+    Description: The stage name prefix
+    Default: S1
+
+# Mappings:
+#   RegionMap:
+#     "Us-east":
+#       AMI: 1234
+#       # Name: Greater Chennai
+#     "Us-West":
+#       AMI: 3456
+#       # Name: Greater Tirupathi
+
+Conditions:
+  RegionspecificResource: !Equals ["AWS::Region", "eu-west-2"]
+
+Resources:
+  DynamoStack:
+    Type: AWS::CloudFormation::Stack
+    Conditions: RegionspecificResource
+    Properties:
+      TemplateURL: ./database/patientflow-db-stack.yaml
+      # AMI: !FindInMap ["RegionMap", "AWS:Region", AMI]
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [IAMRoleStack]
+    Properties:
+      TemplateURL: ./api/patientflow-lambda-stack.yaml
+      Parameters:
+        Prefix: !Ref StackPrefix
+        Environment: !Ref Environment
+        LambdaExecutionRole: !GetAtt IAMRoleStack.Arn
+        ApiVersion: !Ref ApiVersion
+        StageName: !Ref StageName
+
+  APIGatewayStack:
+  Type: AWS::CloudFormation::Stack
+  DependsOn: [LambdaStack, IAMRoleStack]
+  Properties:
+    TemplateURL: ./api/patientflow-apigateway-stack.yaml
+    Parameters:
+      Prefix: !Ref StackPrefix
+      Environment: !Ref Environment
+
+  IAMRoleStack:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub $(Prefix)-$(Environment)-lambda-execution-role
+      Path: "/"
+      AssumeRolePolicyDocument:
+      Policies:
+        - PolicyName: !Sub ${Prefix}-${Environment}-Lambda-db-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # - Effect: Allow
+              #   Action:
+              #     - cloudformation:CreateChangeSet
+              #     - cloudformation:DescribeStacks
+              #     - cloudformation:CreateStack
+              #     - cloudformation:UpdateStack
+              #   Resource:
+              #     - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Prefix}-${Environment}-*
+              - Effect: Allow
+                Action:
+                  - lambda:CreateFunction
+                  - lambda:DeleteFunction
+                  - lambda:PublishVersion
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-${Environment}-*
+
+  ApiGatewayLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Environment}-${Prefix}-gateway-rol
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action :
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: !Sub ${Environment}-${Prefix}-pol
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                - lambda:InvokeFunction
+                - iam:PassRole
+                Resource:
+                - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:$(prefix)-$(Environment)-GetPatientFlowOrganisation:*"
+                - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:$(prefix)-$(Environment)-PostPatientFlowOrganisation:*"
+                - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:$(prefix)-$(Environment)-GetPatientFlowKioskById:*"
+                - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:$(prefix)-$(Environment)-PostPatientFlowKiosk:*"
+              - Effect: Allow
+                Action:
+                - s3:Get*
+                - s3:List*
+                Resource:
+                - !Sub "arn:aws:s3:::${BucketName}/*"
+              - Effect: Allow
+                Action:
+                - logs:DescribeLogGroups
+                - logs:DescribeLogStreams
+                - logs:PutLogEvents
+                - logs:GetLogEvents
+                - logs:FilterLogEvents
+                Resource:
+                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+
+Outputs:
+  LambdaExecutionRole:
+    Description: The arn of the iam role created for lambda and cloud formation
+    Value: !GetAtt IAMRoleStack.Arn
+

@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Cloud formation stack for patient flow lambda'
+
+Resources:
+  PatientFlowDynamoDbTable:
+    Type: AWS::DynamoDB:Table
+    Properties:
+    TableName: PatientFlow
+    AttributeDefinitions:
+      -
+        AttributeName: PK
+        AttributeType: "S"
+      -
+        AttributeName: SK
+        AttributeType: "S"
+      -
+        AttributeName: AdminPassword
+        AttributeType: "S"
+      -
+        AttributeName: KioskName
+        AttributeType: "S"
+      -
+        AttributeName: ScreeTimeOut
+        AttributeType: "S"
+      -
+        AttributeName: OrganisationName
+        AttributeType: "S"
+      -
+        AttributeName: SystemType
+        AttributeType: "S"
+      -
+        AttributeName: MachineID
+        AttributeType: "S"
+    KeySchema:
+      -
+        AttributeName: "PK"
+        KeyType: "HASH"
+      -
+        AttributeName: "SK"
+        KeyType: "RANGE"

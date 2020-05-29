@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Cloud formation stack for patient flow lambda'
+
+Parameters:
+  StackPrefix:
+    Type: String
+    Description: The stack prefix
+  Environment:
+    Type: String
+    Description: The environment to which stack is deployed
+  LambdaExecutionRole:
+    Type: String
+    Description: The iam role permissions to run this lambda
+  ApiVersion:
+    Type: String
+    Description: The version of the API
+  StageName:
+    Type: String
+    Description: The stage name prefix
+
+Resources:
+  GetPatientFlowOrganisation:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub $(prefix)-$(Environment)-GetPatientFlowOrganisation
+      Description: Function to get all the organisations
+      Handler: lambda
+      Runtime: go1.x
+      Code: ../../../src/Lambda/organisation/get
+      Role: !Ref LambdaExecutionRole
+      Environment:
+        Variables:
+          ApiVersion: !Ref ApiVersion
+
+  PostPatientFlowOrganisation:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub $(prefix)-$(Environment)-PostPatientFlowOrganisation
+      Description: Function to post a new organisation
+      Handler: lambda
+      Runtime: go1.x
+      Code: ../../../src/Lambda/organisation/post
+      Role: !Ref LambdaExecutionRole
+      Environment:
+        Variables:
+          ApiVersion: !Ref ApiVersion
+
+  GetPatientFlowKioskById:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub $(prefix)-$(Environment)-GetPatientFlowKioskById
+      Description: Function to get the kiosks by Id
+      Handler: lambda
+      Runtime: go1.x
+      Code: ../../../src/Lambda/kiosk/get
+      Role: !Ref LambdaExecutionRole
+      Environment:
+        Variables:
+          ApiVersion: !Ref ApiVersion
+
+  PostPatientFlowKiosk:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub $(prefix)-$(Environment)-PostPatientFlowKiosk
+      Description: Function to post a new kiosk
+      Handler: lambda
+      Runtime: go1.x
+      Code: ../../../src/Lambda/kiosk/post
+      Role: !Ref LambdaExecutionRole
+      Environment:
+        Variables:
+          ApiVersion: !Ref ApiVersion
+
+

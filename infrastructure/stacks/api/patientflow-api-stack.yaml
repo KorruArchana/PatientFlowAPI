@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Cloud formation stack for patient flow lambda'
+
+Parameters:
+  StackPrefix:
+    Type: String
+    Description: The stack prefix
+  Environment:
+    Type: String
+    Description: The environment to which stack is deployed
+  StageName:
+    Type: String
+    Description: The stage name prefix
+
+Resources:
+  PatientFlowApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub $(StackPrefix)--PatientFlow-API
+      Description: API Gateway for patient flow system
+      # Variables:
+      #   "stageName": !Sub ${StageName}
+      #   "env": !Sub ${Environment}EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        Fn:Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./patientflow-api-swagger-yaml
+
+
